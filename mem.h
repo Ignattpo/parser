@@ -11,7 +11,20 @@ int variable_set[100];
 // Number of variables defined
 int variable_counter = 0;
 // Store values of the variables
-int variable_values[100];
+long variable_values[100];
+
+/* Add a variable name to the memory store */
+int get_variable(char* var_name) {
+  int i;  // Index var
+
+  /* Search for the variable and return its index if found */
+  for (i = 0; i < variable_counter; i++) {
+    if (strcmp(&var_name[1], variable_names[i]) == 0) {
+      return i;
+    }
+  }
+  return -1;
+}
 
 /* Add a variable name to the memory store */
 int add_variable(char* var_name) {
@@ -32,7 +45,7 @@ int add_variable(char* var_name) {
 }
 
 /* Set a variables value in the memory store */
-int set_variable(int index, int val) {
+int set_variable(int index, long val) {
   variable_values[index] = val;
   variable_set[index] = 1;
 

@@ -6,20 +6,19 @@
 #include "func.h"
 #include "parser.h"
 
-extern int variable_values[100];
+extern long variable_values[100];
 extern int variable_set[100];
 
 /* Flex functions */
 extern int yylex(void);
 extern void yyterminate();
-void yyerror(const char *s);
 extern FILE* yyin;
+void yyerror(const char *s);
 %}
-
 
 %union {
     int index;
-    int num;
+    long num;
 }
 
 %token<num> NUMBER
@@ -27,6 +26,8 @@ extern FILE* yyin;
 %token<num> DIV MUL ADD SUB EQUALS
 %token<num> EOL
 %token<index> VARIABLE
+%token<index> TAKE_POINTER
+%token<index> TAKE_VALUE
 
 
 %type<num> program_input
@@ -50,7 +51,7 @@ program_input:
 
 line:
     EOL                { printf("Please enter a calculation:\n"); }
-    | calculation EOL  { printf("=%d\n",$1); }
+    | calculation EOL  { printf("=%x\n",$1); }
     ;
 
 calculation:
@@ -67,6 +68,8 @@ expr:
         | expr ADD expr     { $$ = $1 + $3; }
         | expr SUB expr     { $$ = $1 - $3; }
         | expr POW expr     { $$ = pow($1, $3); }
+        | TAKE_POINTER      { if ($1 < 0) { yyerror("Not initialised variable"); exit(1); } else $$ = (int*)&variable_values[$1]; }
+        | TAKE_VALUE        { if ($1 < 0) { yyerror("Not initialised variable"); exit(1); } else $$ = *(int*)variable_values[$1];}
         ;
 
 assignment:
@@ -75,11 +78,11 @@ assignment:
 
 %%
 
-    /* Entry point */
 
 
 /* Display error messages */
 void yyerror(const char *s)
 {
-    printf("ERROR: %s\n", s);
+  printf("ERROR: %s\n", s);
 }
+
