@@ -19,7 +19,7 @@ int get_variable(char* var_name) {
 
   /* Search for the variable and return its index if found */
   for (i = 0; i < variable_counter; i++) {
-    if (strcmp(&var_name[1], variable_names[i]) == 0) {
+    if (strcmp(var_name, variable_names[i]) == 0) {
       return i;
     }
   }
@@ -29,7 +29,6 @@ int get_variable(char* var_name) {
 /* Add a variable name to the memory store */
 int add_variable(char* var_name) {
   int i;  // Index var
-
   /* Search for the variable and return its index if found */
   for (i = 0; i < variable_counter; i++) {
     if (strcmp(var_name, variable_names[i]) == 0) {
