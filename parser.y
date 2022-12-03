@@ -6,7 +6,7 @@
 #include "func.h"
 #include "parser.h"
 
-extern double variable_values[100];
+extern int variable_values[100];
 extern int variable_set[100];
 
 /* Flex functions */
@@ -19,18 +19,21 @@ extern FILE* yyin;
 
 %union {
     int index;
-    double num;
+    int num;
 }
 
 %token<num> NUMBER
 %token<num> L_BRACKET R_BRACKET
 %token<num> DIV MUL ADD SUB EQUALS
 %token<num> EOL
+%token<index> VARIABLE
+
 
 %type<num> program_input
 %type<num> line
 %type<num> expr
 %type<num> calculation
+%type<num> assignment
 
 /* Set operator precedence, follows BODMAS rules. */
 %left SUB
@@ -47,15 +50,17 @@ program_input:
 
 line:
     EOL                { printf("Please enter a calculation:\n"); }
-    | calculation EOL  { printf("=%.2f\n",$1); }
+    | calculation EOL  { printf("=%d\n",$1); }
     ;
 
 calculation:
-          expr
+         assignment
+        | expr
         ;
 expr:
           SUB expr          { $$ = -$2; }
         | NUMBER            { $$ = $1; }
+        | VARIABLE          { $$ = variable_values[$1]; }
         | expr DIV expr     { if ($3 == 0) { yyerror("Cannot divide by zero"); exit(1); } else $$ = $1 / $3; }
         | expr MUL expr     { $$ = $1 * $3; }
         | L_BRACKET expr R_BRACKET { $$ = $2; }
@@ -63,6 +68,10 @@ expr:
         | expr SUB expr     { $$ = $1 - $3; }
         | expr POW expr     { $$ = pow($1, $3); }
         ;
+
+assignment:
+      VARIABLE EQUALS calculation { $$ = set_variable($1, $3); }
+      ;
 
 %%
 
