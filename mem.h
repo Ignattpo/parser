@@ -13,6 +13,14 @@ int variable_counter = 0;
 // Store values of the variables
 long variable_values[100];
 
+char* get_string(const char* var) {
+  int len = strlen(var);
+  char* res = malloc(sizeof(char) * (len - 2));
+  memcpy(res, &var[1], len - 2);
+  res[len - 2] = '\0';
+  return res;
+}
+
 /* Add a variable name to the memory store */
 int get_variable(char* var_name) {
   int i;  // Index var

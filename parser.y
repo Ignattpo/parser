@@ -4,6 +4,9 @@
 #include <string.h>
 #include <math.h>
 #include <stdbool.h>
+#include <stdio.h>
+#include <dlfcn.h>
+
 #include "func.h"
 #include "parser.h"
 
@@ -15,6 +18,7 @@ extern int yylex(void);
 extern void yyterminate();
 extern FILE* yyin;
 void yyerror(const char *s);
+void* get_ptr_func(const char *s);
 %}
 
 %union {
@@ -46,7 +50,6 @@ void yyerror(const char *s);
 %left ADD
 %left MUL
 %left DIV
-%left POW
 %left L_BRACKET R_BRACKET
 
 %%
@@ -56,7 +59,7 @@ program_input:
 
 line:
     EOL                { printf("Please enter a calculation:\n"); }
-    | calculation EOL  { printf("=%x\n",$1); }
+    | calculation EOL  {}
     ;
 
 calculation:
@@ -73,29 +76,84 @@ expr:
         | L_BRACKET expr R_BRACKET { $$ = $2; }
         | expr ADD expr     { $$ = $1 + $3; }
         | expr SUB expr     { $$ = $1 - $3; }
-        | expr POW expr     { $$ = pow($1, $3); }
         | TAKE_POINTER      { if ($1 < 0) { yyerror("Not initialised variable"); exit(1); } else $$ = (int*)&variable_values[$1]; }
         | TAKE_VALUE        { if ($1 < 0) { yyerror("Not initialised variable"); exit(1); } else $$ = *(int*)variable_values[$1];}
         ;
 
 assignment:
       VARIABLE EQUALS calculation {int i = add_variable($1); $$ = set_variable(i, $3); }
+      | TAKE_VALUE EQUALS calculation { if ($1 < 0) { yyerror("Not initialised variable"); exit(1); } else *(int*)variable_values[$1]=$3;}
       ;
 
 function:
-       VARIABLE L_BRACKET R_BRACKET                                                 { printf("FUNCTION %s\n",$1);}
-      | VARIABLE L_BRACKET arg R_BRACKET                                            { printf("FUNCTION %s(%s)\n",$1,$3);}
-      | VARIABLE L_BRACKET arg COMMA arg R_BRACKET                                  { printf("FUNCTION %s\n",$1);}
-      | VARIABLE L_BRACKET arg COMMA arg COMMA arg COMMA R_BRACKET                  { printf("FUNCTION %s\n",$1);}
-      | VARIABLE L_BRACKET arg COMMA arg COMMA arg COMMA arg R_BRACKET              { printf("FUNCTION %s\n",$1);}
-      | VARIABLE L_BRACKET arg COMMA arg COMMA arg COMMA arg COMMA arg R_BRACKET    { printf("FUNCTION %s\n",$1);}
+       VARIABLE L_BRACKET R_BRACKET                                                 {
+                                                                                      void* (*ptr_func)() = NULL;
+                                                                                      ptr_func = get_ptr_func($1);
+                                                                                      if (!ptr_func ) {
+                                                                                          exit(1);
+                                                                                      }
+                                                                                      $$ = ptr_func();
+                                                                                    }
+      | VARIABLE L_BRACKET arg R_BRACKET                                            {
+                                                                                      void* (*ptr_func)() = NULL;
+                                                                                      ptr_func = get_ptr_func($1);
+                                                                                      if (!ptr_func ) {
+                                                                                          exit(1);
+                                                                                      }
+                                                                                      $$ = ptr_func($3);
+                                                                                    }
+      | VARIABLE L_BRACKET arg COMMA arg R_BRACKET                                  {
+                                                                                      void* (*ptr_func)() = NULL;
+                                                                                      ptr_func = get_ptr_func($1);
+                                                                                      if (!ptr_func ) {
+                                                                                          exit(1);
+                                                                                      }
+                                                                                      $$ = ptr_func($3,$5);
+                                                                                    }
+      | VARIABLE L_BRACKET arg COMMA arg COMMA arg R_BRACKET                        {
+                                                                                      void* (*ptr_func)() = NULL;
+                                                                                      ptr_func = get_ptr_func($1);
+                                                                                      if (!ptr_func ) {
+                                                                                          exit(1);
+                                                                                      }
+                                                                                      $$ = ptr_func($3,$5,$7);
+                                                                                    }
+      | VARIABLE L_BRACKET arg COMMA arg COMMA arg COMMA arg R_BRACKET              {
+                                                                                      void* (*ptr_func)() = NULL;
+                                                                                      ptr_func = get_ptr_func($1);
+                                                                                      if (!ptr_func ) {
+                                                                                          exit(1);
+                                                                                      }
+                                                                                      $$ = ptr_func($3,$5,$7,$9);
+                                                                                    }
+      | VARIABLE L_BRACKET arg COMMA arg COMMA arg COMMA arg COMMA arg R_BRACKET    {
+                                                                                      void* (*ptr_func)() = NULL;
+                                                                                      ptr_func = get_ptr_func($1);
+                                                                                      if (!ptr_func ) {
+                                                                                          exit(1);
+                                                                                      }
+                                                                                      $$ = ptr_func($3,$5,$7,$9,$11);
+                                                                                    }
       ;
 arg:
       expr
       | STRING { $$ = $1;}
+      | function
       ;
 
 %%
+
+void* get_ptr_func(const char *s)
+{
+    void* (*ptr_func)() = NULL;
+    ptr_func = dlsym(NULL, s);
+    void* error = dlerror();
+    if (error) {
+         printf("ERROR: Not found function %s\n", s);
+        return NULL;
+    }
+    return ptr_func;
+}
 
 /* Display error messages */
 void yyerror(const char *s)
