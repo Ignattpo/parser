@@ -16,8 +16,20 @@ long variable_values[100];
 char* get_string(const char* var) {
   int len = strlen(var);
   char* res = malloc(sizeof(char) * (len - 2));
-  memcpy(res, &var[1], len - 2);
-  res[len - 2] = '\0';
+  int new_len = len;
+  int j = 0;
+  int i = 1;
+  for (j = 0, i = 1; i < len - 1; i++, j++) {
+    if ((var[i] == '\\') && (var[i + 1] == 'n')) {
+      res[j] = '\n';
+      i++;
+      new_len--;
+      continue;
+    }
+    res[j] = var[i];
+  }
+
+  res[new_len - 1] = '\0';
   return res;
 }
 
