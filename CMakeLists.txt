@@ -15,5 +15,5 @@ bison_target(PARSER "parser.y" "${PARSER_OUT}" DEFINES_FILE "${PARSER_DIR}/parse
 add_flex_bison_dependency(LEXER PARSER)
 
 add_executable(dshell main.c "${LEXER_OUT}" "${PARSER_OUT}")
-target_link_libraries(dshell m)
+target_link_libraries(dshell m  ${CMAKE_DL_LIBS})
 target_include_directories(dshell PRIVATE "${PARSER_DIR}" "${CMAKE_CURRENT_SOURCE_DIR}")

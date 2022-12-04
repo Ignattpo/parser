@@ -29,12 +29,14 @@ void* get_ptr_func(const char *s);
 
 %token<num> NUMBER
 %token<num> L_BRACKET R_BRACKET COMMA
-%token<num> DIV MUL ADD SUB EQUALS
+%token<num> DIV MUL ADD SUB ASSIGN
 %token<num> EOL
 %token<index> TAKE_POINTER
 %token<index> TAKE_VALUE
 %token<str> VARIABLE
 %token<str> STRING
+%token<str> ASSERT
+%token<num> EQ NE GE GT LE LT NOT OR AND OR_BIT AND_BIT
 
 
 %type<num> program_input
@@ -44,12 +46,17 @@ void* get_ptr_func(const char *s);
 %type<num> assignment
 %type<num> function
 %type<num> arg
+%type<num> assert
+%type<num> boolean
 
 /* Set operator precedence, follows BODMAS rules. */
 %left SUB
 %left ADD
 %left MUL
 %left DIV
+%left OR OR_BIT
+%left AND AND_BIT
+%left NOT
 %left L_BRACKET R_BRACKET
 
 %%
@@ -66,7 +73,32 @@ calculation:
          assignment
         | function
         | expr
+        | assert
         ;
+
+assert:
+        ASSERT L_BRACKET expr R_BRACKET {
+                                            if(!$3){
+                                                printf("Assert occurred at line %d\n", $1);
+                                                exit(1);
+                                            }
+                                        }
+         ;
+
+boolean:
+        expr EQ expr            { $$ =($1 == $3) ? true: false; }
+        | expr NE expr          { $$ =($1 != $3) ? true: false; }
+        | expr GE expr          { $$ =($1 >= $3) ? true: false; }
+        | expr GT expr          { $$ =($1 > $3) ? true: false; }
+        | expr LE expr          { $$ =($1 <= $3) ? true: false; }
+        | expr LT expr          { $$ =($1 < $3) ? true: false; }
+        | expr OR expr          { $$ =($1 || $3) ? true: false; }
+        | expr AND expr         { $$ =($1 && $3) ? true: false; }
+        | expr OR_BIT expr      { $$ =($1 | $3) ? true: false; }
+        | expr AND_BIT expr     { $$ =($1 & $3) ? true: false; }
+        | NOT expr              { $$ = !$2; }
+        ;
+
 expr:
           SUB expr          { $$ = -$2; }
         | NUMBER            { $$ = $1; }
@@ -78,11 +110,12 @@ expr:
         | expr SUB expr     { $$ = $1 - $3; }
         | TAKE_POINTER      { if ($1 < 0) { yyerror("Not initialised variable"); exit(1); } else $$ = (int*)&variable_values[$1]; }
         | TAKE_VALUE        { if ($1 < 0) { yyerror("Not initialised variable"); exit(1); } else $$ = *(int*)variable_values[$1];}
+        | boolean
         ;
 
 assignment:
-      VARIABLE EQUALS calculation {int i = add_variable($1); $$ = set_variable(i, $3); }
-      | TAKE_VALUE EQUALS calculation { if ($1 < 0) { yyerror("Not initialised variable"); exit(1); } else *(int*)variable_values[$1]=$3;}
+      VARIABLE ASSIGN calculation {int i = add_variable($1); $$ = set_variable(i, $3); }
+      | TAKE_VALUE ASSIGN calculation { if ($1 < 0) { yyerror("Not initialised variable"); exit(1); } else *(int*)variable_values[$1]=$3;}
       ;
 
 function:
