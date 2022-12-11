@@ -37,6 +37,7 @@
 "-"                             { return SUB; }
 "="                             { return ASSIGN; }
 ","                             { return COMMA; }
+";"                             { return SEMICOLON; }
 [\n]                            { return EOL; }
 .                               { printf("Undefined symbol at line %d",yylineno-1); exit(1); }
 %%

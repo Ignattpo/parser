@@ -30,7 +30,7 @@ void* get_ptr_func(const char *s);
 %token<num> NUMBER
 %token<num> L_BRACKET R_BRACKET COMMA
 %token<num> DIV MUL ADD SUB ASSIGN
-%token<num> EOL
+%token<num> EOL SEMICOLON
 %token<index> TAKE_POINTER
 %token<index> TAKE_VALUE
 %token<str> VARIABLE
@@ -65,8 +65,10 @@ program_input:
     ;
 
 line:
-    EOL                { printf("Please enter a calculation:\n"); }
-    | calculation EOL  {}
+    EOL                          { printf("Please enter a calculation:\n"); }
+    | calculation EOL            {}
+    | calculation SEMICOLON EOL  {}
+    | calculation SEMICOLON      {}
     ;
 
 calculation:
