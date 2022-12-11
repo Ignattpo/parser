@@ -21,6 +21,7 @@ int main(int argc, char** argv) {
 
     printf("All done with %s\n", c);
   } else {
+
     // Command line
     printf("Ok, command line it is!\n");
 

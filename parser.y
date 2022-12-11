@@ -67,8 +67,8 @@ program_input:
 line:
     EOL                          { printf("Please enter a calculation:\n"); }
     | calculation EOL            {}
-    | calculation SEMICOLON EOL  {}
-    | calculation SEMICOLON      {}
+    | calculation SEMICOLON EOL  {printf("0x%x %d\n",$1, $1);}
+    | calculation SEMICOLON      {printf("0x%x %d\n",$1, $1);}
     ;
 
 calculation:
