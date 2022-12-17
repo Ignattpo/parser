@@ -17,7 +17,7 @@
 [A-Za-z_]+([A-Za-z_0-9]+)?      { yylval.str = strdup(yytext); return VARIABLE;}
 \"([^"\\]|\\.|\\\n)*\"          { yylval.str = get_string(yytext); return STRING;}
 0x+([0-9a-fA-F]+)               { yylval.num = (int)strtol(yytext, NULL, 0); return NUMBER;}
-[0-9]+(\.[0-9]+)?               { yylval.num = atof(yytext); return NUMBER; }
+[0-9]+(\.[0-9]+)?               { yylval.num = atol(yytext); return NUMBER; }
 "=="                            { return EQ; }
 "!="                            { return NE; }
 ">="                            { return GE; }

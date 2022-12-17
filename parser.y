@@ -66,7 +66,7 @@ program_input:
 
 line:
     EOL                          { printf("Please enter a calculation:\n"); }
-    | calculation EOL            {}
+    | calculation EOL
     | calculation SEMICOLON EOL  {printf("0x%x %d\n",$1, $1);}
     | calculation SEMICOLON      {printf("0x%x %d\n",$1, $1);}
     ;
@@ -104,7 +104,7 @@ boolean:
 expr:
           SUB expr          { $$ = -$2; }
         | NUMBER            { $$ = $1; }
-        | VARIABLE          {int i = get_variable($1); if (i < 0) { yyerror("Not initialised variable"); exit(1); } else $$ = variable_values[i]; }
+        | VARIABLE          {int i = get_variable($1); if (i < 0) { yyerror("VARIABLE Not initialised variable"); exit(1); } else $$ = variable_values[i]; }
         | expr DIV expr     { if ($3 == 0) { yyerror("Cannot divide by zero"); exit(1); } else $$ = $1 / $3; }
         | expr MUL expr     { $$ = $1 * $3; }
         | L_BRACKET expr R_BRACKET { $$ = $2; }

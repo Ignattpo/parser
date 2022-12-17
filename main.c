@@ -21,11 +21,20 @@ int main(int argc, char** argv) {
 
     printf("All done with %s\n", c);
   } else {
-
+    //    log_open();
     // Command line
     printf("Ok, command line it is!\n");
 
-    yyin = stdin;
-    yyparse();
+    char command[1024];
+    while (1) {
+      scanf("%s", command);
+      size_t command_size = strlen(command);
+      command[command_size] = '\n';
+      command[command_size + 1] = '\0';
+      YY_BUFFER_STATE buffer = yy_scan_string(command);
+      yyparse();
+      yy_delete_buffer(buffer);
+    }
+    //    log_close();
   }
 }
