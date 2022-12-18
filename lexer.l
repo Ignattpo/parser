@@ -11,7 +11,7 @@
 
 %%
 [ \t]
-"assert"                        { yylval.num = yylineno-1; return ASSERT; }
+"assert"                        { printf("%d\n",a);yylval.num = yylineno-1; return ASSERT; }
 \*[A-Za-z_]+([A-Za-z_0-9]+)?    { yylval.index = get_variable(&yytext[1]); return TAKE_VALUE;}
 \&[A-Za-z_]+([A-Za-z_0-9]+)?    { yylval.index = get_variable(&yytext[1]); return TAKE_POINTER;}
 [A-Za-z_]+([A-Za-z_0-9]+)?      { yylval.str = strdup(yytext); return VARIABLE;}

@@ -1,9 +1,9 @@
 #include <stdbool.h>
 #include <stdio.h>
 
-#include "lexer.h"
 #include "log.h"
 #include "parser.h"
+#include "lexer.h"
 
 enum command_type_t {
   COMMAND_CALC = 0,
@@ -45,7 +45,7 @@ int main(int argc, char** argv) {
       printf("ERROR: Couldn't open file %s\n", c);
       exit(-1);
     }
-    yyparse();
+    yyparse(25);
 
     printf("All done with %s\n", c);
   } else {
@@ -81,7 +81,7 @@ int main(int argc, char** argv) {
           command[command_size] = '\n';
           command[command_size + 1] = '\0';
           YY_BUFFER_STATE buffer = yy_scan_string(command);
-          yyparse();
+          yyparse(32);
           yy_delete_buffer(buffer);
 
           break;

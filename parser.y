@@ -8,18 +8,31 @@
 #include <dlfcn.h>
 
 #include "func.h"
+
 #include "parser.h"
+#include "lexer.h"
+
 
 extern long variable_values[100];
 extern int variable_set[100];
 
 /* Flex functions */
-extern int yylex(void);
 extern void yyterminate();
 extern FILE* yyin;
-void yyerror(const char *s);
+
 void* get_ptr_func(const char *s);
 %}
+
+%code provides {
+   #define YY_DECL \
+       int yylex(int a)
+   YY_DECL;
+
+   void yyerror(int a,const char *s);
+}
+
+%parse-param { int a }
+%lex-param { int a}
 
 %union {
     int index;
@@ -104,21 +117,21 @@ boolean:
 expr:
           SUB expr          { $$ = -$2; }
         | NUMBER            { $$ = $1; }
-        | VARIABLE          {int i = get_variable($1); if (i < 0) { yyerror("VARIABLE Not initialised variable"); exit(1); } else $$ = variable_values[i]; }
-        | expr DIV expr     { if ($3 == 0) { yyerror("Cannot divide by zero"); exit(1); } else $$ = $1 / $3; }
+        | VARIABLE          {int i = get_variable($1); if (i < 0) { yyerror(13,"VARIABLE Not initialised variable"); exit(1); } else $$ = variable_values[i]; }
+        | expr DIV expr     { if ($3 == 0) { yyerror(13,"Cannot divide by zero"); exit(1); } else $$ = $1 / $3; }
         | expr MUL expr     { $$ = $1 * $3; }
-        | expr TAKE_VALUE   {if ($2 < 0) { yyerror("Not initialised variable"); exit(1); } else $$ = $1 * variable_values[$2];}
+        | expr TAKE_VALUE   {if ($2 < 0) { yyerror(13,"Not initialised variable"); exit(1); } else $$ = $1 * variable_values[$2];}
         | L_BRACKET expr R_BRACKET { $$ = $2; }
         | expr ADD expr     { $$ = $1 + $3; }
         | expr SUB expr     { $$ = $1 - $3; }
-        | TAKE_POINTER      { if ($1 < 0) { yyerror("Not initialised variable"); exit(1); } else $$ = (int*)&variable_values[$1]; }
-        | TAKE_VALUE        { if ($1 < 0) { yyerror("Not initialised variable"); exit(1); } else $$ = *(int*)variable_values[$1];}
+        | TAKE_POINTER      { if ($1 < 0) { yyerror(13,"Not initialised variable"); exit(1); } else $$ = (int*)&variable_values[$1]; }
+        | TAKE_VALUE        { if ($1 < 0) { yyerror(13,"Not initialised variable"); exit(1); } else $$ = *(int*)variable_values[$1];}
         | boolean
         ;
 
 assignment:
       VARIABLE ASSIGN calculation {int i = add_variable($1); $$ = set_variable(i, $3); }
-      | TAKE_VALUE ASSIGN calculation { if ($1 < 0) { yyerror("Not initialised variable"); exit(1); } else *(int*)variable_values[$1]=$3;}
+      | TAKE_VALUE ASSIGN calculation { if ($1 < 0) { yyerror(13,"Not initialised variable"); exit(1); } else *(int*)variable_values[$1]=$3;}
       ;
 
 function:
@@ -192,7 +205,7 @@ void* get_ptr_func(const char *s)
 }
 
 /* Display error messages */
-void yyerror(const char *s)
+void yyerror(int a,const char *s)
 {
   printf("ERROR: %s\n", s);
 }
