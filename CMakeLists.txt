@@ -6,6 +6,7 @@ set(PARSER_DIR "${CMAKE_CURRENT_BINARY_DIR}")
 
 find_package(FLEX 2.6 REQUIRED)
 find_package(BISON 3.0 REQUIRED)
+find_package(Threads REQUIRED)
 
 set(LEXER_OUT "${PARSER_DIR}/lexer.c")
 set(PARSER_OUT "${PARSER_DIR}/parser.c")
@@ -18,12 +19,24 @@ add_executable(dshell
                 main.c
                 "${LEXER_OUT}"
                 "${PARSER_OUT}"
+                telnet_dbg.c
+                telnet_dbg_connections.c
+                command.c
+                log.c
+                variables.c
+                telnet_dbg.h
+                telnet_dbg_priv.h
+                command.h
                 log.h
+                variables.h
                 )
+
 target_link_libraries(dshell
                         m
                         ${CMAKE_DL_LIBS}
+                        Threads::Threads
                         )
+
 target_include_directories(dshell
                             PRIVATE
                             "${PARSER_DIR}"
