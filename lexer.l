@@ -21,6 +21,10 @@
                                   yylval.data.parser=parser;
                                   return READ;
                                 }
+"write"                         {
+                                  yylval.data.parser=parser;
+                                  return WRITE;
+                                }
 "assert"                        {
                                   yylval.data.parser=parser;
                                   yylval.data.num = yylineno-1;

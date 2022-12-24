@@ -115,13 +115,80 @@ void read_address(int socket, char* type, long addr) {
   send(socket, buff, strlen(buff), 0);
 }
 
+void write_variable(int socket, char* type, char* variable, long data) {
+  char buff[1024];
+  dlerror();
+  void* ptr = dlsym(NULL, variable);
+  void* error = dlerror();
+  if (error) {
+    sprintf(buff, "Symbol '%s' not found\n", variable);
+    send(socket, buff, strlen(buff), 0);
+    return;
+  }
+
+  enum type_ptr_t type_ptr = get_type_ptr(type);
+  void* ptr_data = &data;
+
+  switch (type_ptr) {
+    case UNKNOWN:
+      sprintf(buff, "Type '%s' not found\n", type);
+      break;
+    case U8:
+      *(uint8_t*)ptr = *(uint8_t*)ptr_data;
+      sprintf(buff, "Writed address '%s' = 0x%x\n", variable, *(uint8_t*)ptr);
+      break;
+    case U16:
+      *(uint16_t*)ptr = *(uint16_t*)ptr_data;
+      sprintf(buff, "Writed address '%s' = 0x%x\n", variable, *(uint16_t*)ptr);
+      break;
+    case U32:
+      *(uint32_t*)ptr = *(uint32_t*)ptr_data;
+      sprintf(buff, "Writed address '%s' = 0x%x\n", variable, *(uint32_t*)ptr);
+      break;
+  }
+
+  send(socket, buff, strlen(buff), 0);
+}
+
+void write_address(int socket, char* type, long addr, long data) {
+  char buff[1024];
+  void* ptr = (void*)addr;
+  if (!ptr) {
+    sprintf(buff, "Address '%lx' is NULL\n", addr);
+    send(socket, buff, strlen(buff), 0);
+    return;
+  }
+
+  enum type_ptr_t type_ptr = get_type_ptr(type);
+  void* ptr_data = &data;
+
+  switch (type_ptr) {
+    case UNKNOWN:
+      sprintf(buff, "Type '%s' not found\n", type);
+      break;
+    case U8:
+      *(uint8_t*)ptr = *(uint8_t*)ptr_data;
+      sprintf(buff, "Writed address '%lx' = 0x%x\n", addr, *(uint8_t*)ptr);
+      break;
+    case U16:
+      *(uint16_t*)ptr = *(uint16_t*)ptr_data;
+      sprintf(buff, "Writed address '%lx' = 0x%x\n", addr, *(uint16_t*)ptr);
+      break;
+    case U32:
+      *(uint32_t*)ptr = *(uint32_t*)ptr_data;
+      sprintf(buff, "Writed address '%lx' = 0x%x\n", addr, *(uint32_t*)ptr);
+      break;
+  }
+
+  send(socket, buff, strlen(buff), 0);
+}
+
 // static const parser_command cmds[] = {
 //    {"c", -1, &cmd_call, "Call function by symbol/address", NULL},
 //    {"hw", 2, &cmd_writehex, "Write hex string to address", NULL},
 //    {"hd", 2, &cmd_dump, "HexDump memory to console.", NULL},
 //    {"m2f", 3, &mem2file_cmd, "Dump memory to file", NULL},
 //    {"ww", 2, &memwrite_cmd, "Write WORD", NULL},
-//    {"rw", 1, &memread_cmd, "Read WORD", NULL},
 //    {"exit", 0, &cmd_exit, "Close shell", NULL},
 //    {NULL, 0, NULL, NULL}};
 
