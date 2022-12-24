@@ -5,6 +5,7 @@
 #include "variables.h"
 #include "command.h"
 #include "parser.h"
+#include "func.h"
 %}
 
 %option noyywrap
@@ -12,13 +13,42 @@
 
 %%
 [ \t]
-"assert"                        { yylval.data.parser=parser; yylval.data.num = yylineno-1; return ASSERT; }
-\*[A-Za-z_]+([A-Za-z_0-9]+)?    { yylval.data.parser=parser; yylval.data.index = get_variable(&parser->variables, &yytext[1]); return TAKE_VALUE;}
-\&[A-Za-z_]+([A-Za-z_0-9]+)?    { yylval.data.parser=parser; yylval.data.index = get_variable(&parser->variables, &yytext[1]); return TAKE_POINTER;}
-[A-Za-z_]+([A-Za-z_0-9]+)?      { yylval.data.parser=parser; yylval.data.str = strdup(yytext); return VARIABLE;}
-\"([^"\\]|\\.|\\\n)*\"          { yylval.data.str = get_string(yytext); return STRING;}
-0x+([0-9a-fA-F]+)               { yylval.data.num = (int)strtol(yytext, NULL, 0); return NUMBER;}
-[0-9]+(\.[0-9]+)?               { yylval.data.num = atol(yytext); return NUMBER; }
+"resolv"                        {
+                                  yylval.data.parser=parser;
+                                  return RESOLV;
+                                }
+"assert"                        {
+                                  yylval.data.parser=parser;
+                                  yylval.data.num = yylineno-1;
+                                  return ASSERT;
+                                }
+\*[A-Za-z_]+([A-Za-z_0-9]+)?    {
+                                  yylval.data.parser=parser;
+                                  yylval.data.index = get_variable(&parser->variables, &yytext[1]);
+                                  return TAKE_VALUE;
+                                }
+\&[A-Za-z_]+([A-Za-z_0-9]+)?    {
+                                  yylval.data.parser=parser;
+                                  yylval.data.index = get_variable(&parser->variables, &yytext[1]);
+                                  return TAKE_POINTER;
+                                }
+[A-Za-z_]+([A-Za-z_0-9]+)?      {
+                                  yylval.data.parser=parser;
+                                  yylval.data.str = strdup(yytext);
+                                  return VARIABLE;
+                                }
+\"([^"\\]|\\.|\\\n)*\"          {
+                                  yylval.data.str = get_string(yytext);
+                                  return STRING;
+                                }
+0x+([0-9a-fA-F]+)               {
+                                  yylval.data.num = (long)strtol(yytext, NULL, 0);
+                                  return NUMBER;
+                                }
+[0-9]+(\.[0-9]+)?               {
+                                  yylval.data.num = atol(yytext);
+                                  return NUMBER;
+                                }
 "=="                            { return EQ; }
 "!="                            { return NE; }
 ">="                            { return GE; }
@@ -40,8 +70,10 @@
 ","                             { return COMMA; }
 ";"                             { yylval.data.parser=parser; return SEMICOLON; }
 [\n]                            { yylval.data.parser=parser; return EOL; }
-.                               { char err[255];\
-                                  sprintf(err, "Undefined symbol at line %d %s\n",yylineno-1,&yytext[1]);\
-                                  send(parser->socket, err, strlen(err), 0);\
-                                  return 0;}
+.                               {
+                                  char err[255];
+                                  sprintf(err, "Undefined symbol at line %d %s\n",yylineno-1,&yytext[1]);
+                                  send(parser->socket, err, strlen(err), 0);
+                                  return 0;
+                                }
 %%

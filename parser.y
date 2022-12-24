@@ -51,6 +51,7 @@ void* get_ptr_func(const char *s);
 %token<data.str> STRING
 %token<data> ASSERT
 %token<data.num> EQ NE GE GT LE LT NOT OR AND OR_BIT AND_BIT
+%token<data> RESOLV
 
 
 %type<data.num> program_input
@@ -172,7 +173,9 @@ assignment:
       ;
 
 function:
-       VARIABLE L_BRACKET R_BRACKET                                                 {
+       RESOLV NUMBER                                                                {resolve_address($1.parser->socket,$2);}
+      | RESOLV VARIABLE                                                             {resolve_variable($1.parser->socket,$2.str);}
+      | VARIABLE L_BRACKET R_BRACKET                                                {
                                                                                       void* (*ptr_func)() = NULL;
                                                                                       ptr_func = get_ptr_func($1.str);
                                                                                       if (!ptr_func ) {

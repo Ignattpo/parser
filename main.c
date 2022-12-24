@@ -4,7 +4,7 @@
 #include "telnet_dbg.h"
 
 int main(int argc, char** argv) {
-  struct telnet_dbg_t* dbg = telnet_dbg_init("127.0.0.1", 3025);
+  struct telnet_dbg_t* dbg = telnet_dbg_init("127.0.0.1", 3022);
   telnet_dbg_run(dbg);
   while (1) {
     sleep(1);
