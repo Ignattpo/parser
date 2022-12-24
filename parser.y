@@ -51,7 +51,7 @@ void* get_ptr_func(const char *s);
 %token<data.str> STRING
 %token<data> ASSERT
 %token<data.num> EQ NE GE GT LE LT NOT OR AND OR_BIT AND_BIT
-%token<data> RESOLV
+%token<data> RESOLV READ
 
 
 %type<data.num> program_input
@@ -86,11 +86,11 @@ line:
                                  }
     | calculation EOL
     | calculation SEMICOLON EOL  {char output[255];\
-                                  sprintf(output, "0x%x %d\n",$1, $1);\
+                                  sprintf(output, "0x%lx %ld\n",$1, $1);\
                                   send($2, output, strlen(output), 0);\
                                  }
     | calculation SEMICOLON      {char output[255];\
-                                  sprintf(output, "0x%x %d\n",$1, $1);\
+                                  sprintf(output, "0x%lx %ld\n",$1, $1);\
                                   send($2, output, strlen(output), 0);\
                                  }
     ;
@@ -106,7 +106,7 @@ assert:
         ASSERT L_BRACKET expr R_BRACKET {
                                             if(!$3){
                                                 char output[255];\
-                                                sprintf(output, "Assert occurred at line %d\n", $1.num);\
+                                                sprintf(output, "Assert occurred at line %ld\n", $1.num);\
                                                 yyerror($1.parser,output);\
                                                 return 0;
                                                 }
@@ -173,9 +173,12 @@ assignment:
       ;
 
 function:
-       RESOLV NUMBER                                                                {resolve_address($1.parser->socket,$2);}
-      | RESOLV VARIABLE                                                             {resolve_variable($1.parser->socket,$2.str);}
-      | VARIABLE L_BRACKET R_BRACKET                                                {
+       RESOLV STRING                                                          {resolve_variable($1.parser->socket,$2);}
+      | RESOLV expr                                                                {resolve_address($1.parser->socket,$2);}
+      | READ VARIABLE STRING                                                   {read_variable($1.parser->socket,$2.str,$3);}
+      | READ VARIABLE expr                                                        {read_address($1.parser->socket,$2.str,$3);}
+
+       | VARIABLE L_BRACKET R_BRACKET                                                {
                                                                                       void* (*ptr_func)() = NULL;
                                                                                       ptr_func = get_ptr_func($1.str);
                                                                                       if (!ptr_func ) {

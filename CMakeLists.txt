@@ -8,6 +8,10 @@ find_package(FLEX 2.6 REQUIRED)
 find_package(BISON 3.0 REQUIRED)
 find_package(Threads REQUIRED)
 
+include(GNUInstallDirs)
+
+add_compile_definitions(_GNU_SOURCE)
+
 set(LEXER_OUT "${PARSER_DIR}/lexer.c")
 set(PARSER_OUT "${PARSER_DIR}/parser.c")
 
@@ -24,11 +28,13 @@ add_executable(dshell
                 command.c
                 log.c
                 variables.c
+                func.c
                 telnet_dbg.h
                 telnet_dbg_priv.h
                 command.h
                 log.h
                 variables.h
+                func.h
                 )
 
 target_link_libraries(dshell

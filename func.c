@@ -41,6 +41,80 @@ void resolve_address(int socket, long addr) {
   send(socket, buff, strlen(buff), 0);
 }
 
+enum type_ptr_t { UNKNOWN = 0, U8, U16, U32 };
+
+static enum type_ptr_t get_type_ptr(char* argv) {
+  if (!strcmp(argv, "u8")) {
+    return U8;
+  }
+  if (!strcmp(argv, "u16")) {
+    return U16;
+  }
+  if (!strcmp(argv, "u32")) {
+    return U32;
+  }
+
+  return UNKNOWN;
+}
+
+void read_variable(int socket, char* type, char* variable) {
+  char buff[1024];
+  dlerror();
+  void* ptr = dlsym(NULL, variable);
+  void* error = dlerror();
+  if (error) {
+    sprintf(buff, "Symbol '%s' not found\n", variable);
+    send(socket, buff, strlen(buff), 0);
+    return;
+  }
+
+  enum type_ptr_t type_ptr = get_type_ptr(type);
+  switch (type_ptr) {
+    case UNKNOWN:
+      sprintf(buff, "Type '%s' not found\n", type);
+      break;
+    case U8:
+      sprintf(buff, "Address '%s' = 0x%x\n", variable, *(uint8_t*)ptr);
+      break;
+    case U16:
+      sprintf(buff, "Address '%s' = 0x%x\n", variable, *(uint16_t*)ptr);
+      break;
+    case U32:
+      sprintf(buff, "Address '%s' = 0x%x\n", variable, *(uint32_t*)ptr);
+      break;
+  }
+
+  send(socket, buff, strlen(buff), 0);
+}
+
+void read_address(int socket, char* type, long addr) {
+  char buff[1024];
+  void* ptr = (void*)addr;
+  if (!ptr) {
+    sprintf(buff, "Address '%lx' is NULL\n", addr);
+    send(socket, buff, strlen(buff), 0);
+    return;
+  }
+
+  enum type_ptr_t type_ptr = get_type_ptr(type);
+  switch (type_ptr) {
+    case UNKNOWN:
+      sprintf(buff, "Type '%s' not found\n", type);
+      break;
+    case U8:
+      sprintf(buff, "Address '%lx' = 0x%x\n", addr, *(uint8_t*)ptr);
+      break;
+    case U16:
+      sprintf(buff, "Address '%lx' = 0x%x\n", addr, *(uint16_t*)ptr);
+      break;
+    case U32:
+      sprintf(buff, "Address '%lx' = 0x%x\n", addr, *(uint32_t*)ptr);
+      break;
+  }
+
+  send(socket, buff, strlen(buff), 0);
+}
+
 // static const parser_command cmds[] = {
 //    {"c", -1, &cmd_call, "Call function by symbol/address", NULL},
 //    {"hw", 2, &cmd_writehex, "Write hex string to address", NULL},
@@ -50,8 +124,6 @@ void resolve_address(int socket, long addr) {
 //    {"rw", 1, &memread_cmd, "Read WORD", NULL},
 //    {"exit", 0, &cmd_exit, "Close shell", NULL},
 //    {NULL, 0, NULL, NULL}};
-
-
 
 //  static void cmd_call(int argc, char** argp, void* data, char quoted[]) {
 //    printf(">>>>>> CMD_CALL!!\n");
