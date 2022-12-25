@@ -183,116 +183,76 @@ void write_address(int socket, char* type, long addr, long data) {
   send(socket, buff, strlen(buff), 0);
 }
 
+static void memory_dump(int socket, void* ptr, long byte_count) {
+  char buff[1024];
+  if (byte_count < 0) {
+    char err[255];
+    sprintf(err, "mem_dump command incorrect number of bytes(%ld)\n",
+            byte_count);
+    send(socket, err, strlen(err), 0);
+    return;
+  }
+  //  Размер buff 1024 на запись каждого байта уходит 5 байт и на каждый 8
+  //  добавляется еще 3 байта из за переноса строки 1024/5-((1024/5)/8)*3~=100
+  if (byte_count > 100) {
+    char err[255];
+    sprintf(err,
+            "the maximum number of received bytes at a time should not exceed "
+            "100(%ld>100)\n",
+            byte_count);
+    send(socket, err, strlen(err), 0);
+    return;
+  }
+  int j = 0;
+  for (int i = 0; i < byte_count; i++) {
+    sprintf(&buff[j], "0x%02x ", *(uint8_t*)ptr);
+    j += 5;
+    if (((i + 1) % 8) == 0) {
+      ++j;
+      sprintf(&buff[j], "\n");
+      j += 2;
+    }
+    ptr++;
+  }
+  ++j;
+  sprintf(&buff[j], "\n");
+  send(socket, buff, j, 0);
+}
+
+void memory_dump_address(int socket, long addr, long byte_count) {
+  void* ptr = (void*)addr;
+  if (!ptr) {
+    char err[255];
+    sprintf(err, "Address '%lx' is NULL\n", addr);
+    send(socket, err, strlen(err), 0);
+    return;
+  }
+
+  memory_dump(socket, ptr, byte_count);
+}
+
+void memory_dump_variable(int socket, char* variable, long byte_count) {
+  char buff[1024];
+  dlerror();
+  void* ptr = dlsym(NULL, variable);
+  void* error = dlerror();
+  if (error) {
+    sprintf(buff, "Symbol '%s' not found\n", variable);
+    send(socket, buff, strlen(buff), 0);
+    return;
+  }
+
+  memory_dump(socket, ptr, byte_count);
+}
+
 // static const parser_command cmds[] = {
-//    {"c", -1, &cmd_call, "Call function by symbol/address", NULL},
 //    {"hw", 2, &cmd_writehex, "Write hex string to address", NULL},
-//    {"hd", 2, &cmd_dump, "HexDump memory to console.", NULL},
 //    {"m2f", 3, &mem2file_cmd, "Dump memory to file", NULL},
-//    {"ww", 2, &memwrite_cmd, "Write WORD", NULL},
-//    {"exit", 0, &cmd_exit, "Close shell", NULL},
 //    {NULL, 0, NULL, NULL}};
 
-//  static void cmd_call(int argc, char** argp, void* data, char quoted[]) {
-//    printf(">>>>>> CMD_CALL!!\n");
-//    int fd = *(int*)data;
-//    char sym[512];
-//    char tmp[0xFFF];
-//    void* symptr;
-//    void *a1, *a2, *a3, *a4, *a5;
-//    void* fptr;
-//    int (*fptr1)(void*);
-//    int (*fptr2)(void*, void*);
-//    int (*fptr3)(void*, void*, void*);
-//    int (*fptr4)(void*, void*, void*, void*);
-//    int (*fptr5)(void*, void*, void*, void*, void*);
-//    unsigned retcode = 0;
 
-//    // printf("ARGC=%i %s %s %s\n", argc, argp[0], argp[1], argp[2]);
 
-//    // printf(">>>> CMD______CALL %i %i %i %i %i  \n", (int)quoted[0],
-//    // (int)quoted[1], (int)quoted[2], (int)quoted[3], (int)quoted[4]);
 
-//    if (argc > 2)
-//      a1 = arg2arg(argp[2], ALLOW_ALL, quoted[2]);
-//    if (argc > 3)
-//      a2 = arg2arg(argp[3], ALLOW_ALL, quoted[3]);
-//    if (argc > 4)
-//      a3 = arg2arg(argp[4], ALLOW_ALL, quoted[4]);
-//    if (argc > 5)
-//      a4 = arg2arg(argp[5], ALLOW_ALL, quoted[5]);
-//    if (argc > 6)
-//      a5 = arg2arg(argp[6], ALLOW_ALL, quoted[6]);
-
-//    strlen("Hello");
-//    symptr = dlsym(NULL, argp[1]);
-
-//    sprintf(tmp, ">>> SYM=%s ptr=%p\n", argp[1], symptr);
-//    printf(">>> %s\n", tmp);
-
-//    send(fd, tmp, strlen(tmp), 0);
-//    fptr = symptr;
-//    if (fptr) {
-//      if (argc == 3) {
-//        fptr1 = fptr;
-//        retcode = fptr1(a1);
-//      }
-
-//      if (argc == 4) {
-//        fptr2 = fptr;
-//        retcode = fptr2(a1, a2);
-//      }
-
-//      if (argc == 5) {
-//        fptr3 = fptr;
-//        retcode = fptr3(a1, a2, a3);
-//      }
-
-//      if (argc == 6) {
-//        fptr4 = fptr;
-//        retcode = fptr4(a1, a2, a3, a4);
-//      }
-
-//      if (argc == 7) {
-//        fptr5 = fptr;
-//        retcode = fptr5(a1, a2, a3, a4, a5);
-//      }
-
-//      // int ret = (*fptr)(111);
-//      // sprintf(tmp, "Ret code: %i (0x%08X)\n", retcode, retcode);
-//      printf2sock(fd, ">>> Ret code: %i (0x%08X)\n", retcode, retcode);
-//      // printf(tmp);
-//      // send(fd, tmp, strlen(tmp), 0);
-//    }
-//  }
-
-//  void cmd_resolve(int argc, char** argp, void* data) {
-//    void* ptr;
-//    int fd = *(int*)data;
-
-//    Dl_info info;
-//    int rc;
-//    void* symptr;
-
-//    if (string_to_num(argp[1], &ptr) != -1) {
-//      rc = dladdr(ptr, &info);
-//      if (!rc) {
-//        printf2sock(fd, "Problem retrieving program information for %p: %s\n",
-//                    ptr, dlerror());
-//        return;
-//      }
-//      printf2sock(fd,
-//                  "Address '%p' located in function %s within the program
-//                  %s\n", info.dli_saddr, info.dli_fname, info.dli_sname);
-//    } else {
-//      symptr = dlsym(NULL, argp[1]);
-//      if (!symptr) {
-//        printf2sock(fd, "Problem retrieving information for '%s':  %s\n",
-//                    argp[1], dlerror());
-//        return;
-//      }
-//      printf2sock(fd, "Symbol '%s' located in address %p\n", argp[1], symptr);
-//    }
-//  }
 
 //  static void cmd_writehex(int argc, char** argp, void* data) {
 //    int fd = *(int*)data;
@@ -424,31 +384,3 @@ void write_address(int socket, char* type, long addr, long data) {
 //                value, ptr, old_value);
 //  }
 
-//  static void memread_cmd(int argc, char** argp, void* ddata) {
-//    int fd = *(int*)ddata;
-//    Dl_info info;
-//    int rc;
-//    void* ptr;
-//    u32_t value;
-//    u32_t old_value = 0;
-
-//    if (string_to_num(argp[1], &ptr) == -1) {
-//      ptr = dlsym(NULL, argp[1]);
-//      if (!ptr) {
-//        printf2sock(fd, ">>> Problem retrieving information for '%s':  %s\n",
-//                    argp[1], dlerror());
-//        return;
-//      }
-//      printf2sock(fd, ">>> Symbol '%s' located in address %p\n", argp[1],
-//      ptr);
-//    }
-//    value = *(unsigned*)ptr;
-
-//    printf2sock(fd, ">>> Value 0x%08X (%u) at %p \n", value, value, ptr);
-//  }
-
-//  static void cmd_exit(int argc, char** argp, void* data) {
-//    int fd = *(int*)data;
-//    send(fd, "Bye!\n\n", 6, 0);
-//    close(fd);
-//  }

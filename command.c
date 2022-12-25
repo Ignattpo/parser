@@ -80,7 +80,10 @@ void command_parser(struct parser_command_t* parser,
       send(parser->socket, string_out, strlen(string_out), 0);
       return;
     }
+
     yyparse(parser);
+    yylex_destroy();
+    parser->state = STATE_UNKNOWN;
 
     sprintf(string_out, "All done with %s\n", command);
     send(parser->socket, string_out, strlen(string_out), 0);

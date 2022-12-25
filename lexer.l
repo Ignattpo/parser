@@ -14,34 +14,38 @@
 %%
 [ \t]
 "resolv"                        {
-                                  yylval.data.parser=parser;
+                                  yylval.data.parser = parser;
                                   return RESOLV;
                                 }
 "read"                          {
-                                  yylval.data.parser=parser;
+                                  yylval.data.parser = parser;
                                   return READ;
                                 }
 "write"                         {
-                                  yylval.data.parser=parser;
+                                  yylval.data.parser = parser;
                                   return WRITE;
                                 }
+"mem_dump"                      {
+                                  yylval.data.parser = parser;
+                                  return MEM_DUMP;
+                                }
 "assert"                        {
-                                  yylval.data.parser=parser;
+                                  yylval.data.parser = parser;
                                   yylval.data.num = yylineno-1;
                                   return ASSERT;
                                 }
 \*[A-Za-z_]+([A-Za-z_0-9]+)?    {
-                                  yylval.data.parser=parser;
+                                  yylval.data.parser = parser;
                                   yylval.data.index = get_variable(&parser->variables, &yytext[1]);
                                   return TAKE_VALUE;
                                 }
 \&[A-Za-z_]+([A-Za-z_0-9]+)?    {
-                                  yylval.data.parser=parser;
+                                  yylval.data.parser = parser;
                                   yylval.data.index = get_variable(&parser->variables, &yytext[1]);
                                   return TAKE_POINTER;
                                 }
 [A-Za-z_]+([A-Za-z_0-9]+)?      {
-                                  yylval.data.parser=parser;
+                                  yylval.data.parser = parser;
                                   yylval.data.str = strdup(yytext);
                                   return VARIABLE;
                                 }
@@ -76,8 +80,8 @@
 "-"                             { return SUB; }
 "="                             { return ASSIGN; }
 ","                             { return COMMA; }
-";"                             { yylval.data.parser=parser; return SEMICOLON; }
-[\n]                            { yylval.data.parser=parser; return EOL; }
+";"                             { yylval.data.parser = parser; return SEMICOLON; }
+[\n]                            { yylval.data.parser = parser; return EOL; }
 .                               {
                                   char err[255];
                                   sprintf(err, "Undefined symbol at line %d %s\n",yylineno-1,&yytext[1]);
