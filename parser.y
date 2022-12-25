@@ -51,7 +51,7 @@ void* get_ptr_func(const char *s);
 %token<data.str> STRING
 %token<data> ASSERT
 %token<data.num> EQ NE GE GT LE LT NOT OR AND OR_BIT AND_BIT
-%token<data> RESOLV READ WRITE MEM_DUMP MEM_WRITE
+%token<data> RESOLV READ WRITE MEM_DUMP MEM_WRITE MEM_DUMP_TO_FILE
 
 
 %type<data.num> program_input
@@ -182,7 +182,9 @@ function:
       | MEM_DUMP STRING expr                                                       {memory_dump_variable($1.parser->socket,$2,$3);}
       | MEM_DUMP expr expr                                                         {memory_dump_address($1.parser->socket,$2,$3);}
       | MEM_WRITE STRING STRING                                                    {memory_write_variable($1.parser->socket,$2,$3);}
-      | MEM_WRITE expr STRING                                                       {memory_write_address($1.parser->socket,$2,$3);}
+      | MEM_WRITE expr STRING                                                      {memory_write_address($1.parser->socket,$2,$3);}
+      | MEM_DUMP_TO_FILE STRING expr expr                                          {memory_dump_to_file_address($1.parser->socket,$2,$3,$4);}
+      | MEM_DUMP_TO_FILE STRING STRING expr                                        {memory_dump_to_file_variable($1.parser->socket,$2,$3,$4);}
 
 
        | VARIABLE L_BRACKET R_BRACKET                                              {

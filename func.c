@@ -216,7 +216,7 @@ static void memory_dump(int socket, void* ptr, long byte_count) {
   }
   ++j;
   sprintf(&buff[j], "\n");
-  send(socket, buff, j+1, 0);
+  send(socket, buff, j + 1, 0);
 }
 
 void memory_dump_address(int socket, long addr, long byte_count) {
@@ -302,38 +302,82 @@ void memory_write_variable(int socket, char* variable, char* dump) {
   send(socket, buff, strlen(buff), 0);
 }
 
-// static const parser_command cmds[] = {
-//    {"m2f", 3, &mem2file_cmd, "Dump memory to file", NULL},
+static void memory_dump_to_file(int socket,
+                                char* file_name,
+                                void* ptr,
+                                long byte_count) {
+  if (byte_count < 0) {
+    char err[255];
+    sprintf(err, "mem_dump command incorrect number of bytes(%ld)\n",
+            byte_count);
+    send(socket, err, strlen(err), 0);
+    return;
+  }
+  //  Размер buff 1024 на запись каждого байта уходит 5 байт и на каждый 8
+  //  добавляется еще 3 байта из за переноса строки 1024/5-((1024/5)/8)*3~=100
+  if (byte_count > 100) {
+    char err[255];
+    sprintf(err,
+            "the maximum number of received bytes at a time should not exceed "
+            "100(%ld>100)\n",
+            byte_count);
+    send(socket, err, strlen(err), 0);
+    return;
+  }
+  FILE* fp = NULL;
+  if ((fp = fopen(file_name, "w")) == NULL) {
+    char err[255];
+    sprintf(err, "mem_dump_to_file Failed to open file %s\n", file_name);
+    send(socket, err, strlen(err), 0);
+    return;
+  }
 
+  int j = 0;
+  for (int i = 0; i < byte_count; i++) {
+    fprintf(fp, "0x%02x ", *(uint8_t*)ptr);
+    j += 5;
+    if (((i + 1) % 8) == 0) {
+      ++j;
+      fprintf(fp, "\n");
+      j += 2;
+    }
+    ptr++;
+  }
+  fclose(fp);
 
+  char buff[255];
+  sprintf(buff, "memory dump written to file %s \n", file_name);
+  send(socket, buff, strlen(buff), 0);
+}
 
+void memory_dump_to_file_address(int socket,
+                                 char* file_name,
+                                 long addr,
+                                 long byte_count) {
+  void* ptr = (void*)addr;
+  if (!ptr) {
+    char err[255];
+    sprintf(err, "Address '%lx' is NULL\n", addr);
+    send(socket, err, strlen(err), 0);
+    return;
+  }
 
-//  static void mem2file_cmd(int argc, char** argp, void* ddata) {
-//    int fd = *(int*)ddata;
+  memory_dump_to_file(socket, file_name, ptr, byte_count);
+}
 
-//    char ascii[17];
-//    char tmp[512];
-//    size_t i, j;
-//    int size;
-//    ascii[16] = '\0';
-//    char* data;
+void memory_dump_to_file_variable(int socket,
+                                  char* file_name,
+                                  char* variable,
+                                  long byte_count) {
+  dlerror();
+  void* ptr = dlsym(NULL, variable);
+  void* error = dlerror();
+  if (error) {
+    char err[255];
+    sprintf(err, "Symbol '%s' not found\n", variable);
+    send(socket, err, strlen(err), 0);
+    return;
+  }
 
-//    // printf2sock(fd, "argc=%i argp=%p A0=%s A1=%s A2=%s\n", argc, argp,
-//    // argp[0], argp[1], argp[2]);
-
-//    if (string_to_num(argp[1], &data) == -1 ||
-//        string_to_num(argp[2], &size) == -1) {
-//      printf2sock(fd, ">>> Wrong arguments\n");
-//      return;
-//    }
-
-//    int res = mem2file(argp[3], data, size);
-//    if (res == 0)
-//      printf2sock(fd, ">>> Writed %u bytes to %s\n", size, argp[3]);
-//    else
-//      printf2sock(fd, ">>> Problem writing %u bytes to %s !!!!!\n", size,
-//                  argp[3]);
-
-//    return;
-//  }
-
+  memory_dump_to_file(socket, file_name, ptr, byte_count);
+}

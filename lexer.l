@@ -25,6 +25,10 @@
                                   yylval.data.parser = parser;
                                   return WRITE;
                                 }
+"mem_dump_f"                    {
+                                  yylval.data.parser = parser;
+                                  return MEM_DUMP_TO_FILE;
+                                }
 "mem_dump"                      {
                                   yylval.data.parser = parser;
                                   return MEM_DUMP;
