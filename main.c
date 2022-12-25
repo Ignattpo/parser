@@ -6,7 +6,7 @@
 #include "telnet_dbg.h"
 
 #define ADDRESS "127.0.0.1"
-#define PORT 3015
+#define PORT 3019
 
 volatile unsigned char terminated = 0;
 

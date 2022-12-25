@@ -11,7 +11,7 @@
 
 #include "func.h"
 
-void resolve_variable(int socket, char* variable) {
+void resolve_variable(int socket, char* variable, long* res) {
   char buff[1024];
 
   dlerror();
@@ -24,6 +24,7 @@ void resolve_variable(int socket, char* variable) {
   }
 
   send(socket, buff, strlen(buff), 0);
+  *res = ptr;
 }
 
 void resolve_address(int socket, long addr) {
@@ -57,7 +58,7 @@ static enum type_ptr_t get_type_ptr(char* argv) {
   return UNKNOWN;
 }
 
-void read_variable(int socket, char* type, char* variable) {
+void read_variable(int socket, char* type, char* variable, long* res) {
   char buff[1024];
   dlerror();
   void* ptr = dlsym(NULL, variable);
@@ -74,12 +75,15 @@ void read_variable(int socket, char* type, char* variable) {
       sprintf(buff, "Type '%s' not found\n", type);
       break;
     case U8:
+      *res = *(uint8_t*)ptr;
       sprintf(buff, "Address '%s' = 0x%x\n", variable, *(uint8_t*)ptr);
       break;
     case U16:
+      *res = *(uint16_t*)ptr;
       sprintf(buff, "Address '%s' = 0x%x\n", variable, *(uint16_t*)ptr);
       break;
     case U32:
+      *res = *(uint32_t*)ptr;
       sprintf(buff, "Address '%s' = 0x%x\n", variable, *(uint32_t*)ptr);
       break;
   }
@@ -87,7 +91,7 @@ void read_variable(int socket, char* type, char* variable) {
   send(socket, buff, strlen(buff), 0);
 }
 
-void read_address(int socket, char* type, long addr) {
+void read_address(int socket, char* type, long addr, long* res) {
   char buff[1024];
   void* ptr = (void*)addr;
   if (!ptr) {
@@ -102,12 +106,15 @@ void read_address(int socket, char* type, long addr) {
       sprintf(buff, "Type '%s' not found\n", type);
       break;
     case U8:
+       *res = *(uint8_t*)ptr;
       sprintf(buff, "Address '%lx' = 0x%x\n", addr, *(uint8_t*)ptr);
       break;
     case U16:
+       *res = *(uint16_t*)ptr;
       sprintf(buff, "Address '%lx' = 0x%x\n", addr, *(uint16_t*)ptr);
       break;
     case U32:
+       *res = *(uint32_t*)ptr;
       sprintf(buff, "Address '%lx' = 0x%x\n", addr, *(uint32_t*)ptr);
       break;
   }
@@ -216,7 +223,7 @@ static void memory_dump(int socket, void* ptr, long byte_count) {
   }
   ++j;
   sprintf(&buff[j], "\n");
-  send(socket, buff, j + 1, 0);
+  send(socket, buff, j, 0);
 }
 
 void memory_dump_address(int socket, long addr, long byte_count) {

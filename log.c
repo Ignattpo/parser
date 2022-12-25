@@ -5,7 +5,7 @@
 
 #include "log.h"
 
-#define LOG_LENGHT 10
+#define LOG_LENGHT 50
 
 void command_log_init(struct command_log_t* log) {
   log->lenght = LOG_LENGHT;
@@ -32,11 +32,12 @@ void command_log_add(struct command_log_t* log, char* command) {
 }
 
 char* command_log_get_prev(struct command_log_t* log) {
+  int index = log->index;
   log->index--;
   if (log->index < 0) {
     log->index = 0;
   }
-  return &log->log[log->index * 1024];
+  return &log->log[index * 1024];
 }
 
 char* command_log_get_next(struct command_log_t* log) {

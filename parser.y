@@ -21,7 +21,7 @@ void* get_ptr_func(const char *s);
 
 %code provides {
    #define YY_DECL \
-       int yylex(struct parser_command_t* parser)
+       long yylex(struct parser_command_t* parser)
    YY_DECL;
 
    void yyerror(struct parser_command_t* parser,const char *s);
@@ -173,10 +173,10 @@ assignment:
       ;
 
 function:
-       RESOLV STRING                                                               {resolve_variable($1.parser->socket,$2);}
+       RESOLV STRING                                                               {long res; resolve_variable($1.parser->socket,$2,&res); $$=res;}
       | RESOLV expr                                                                {resolve_address($1.parser->socket,$2);}
-      | READ VARIABLE STRING                                                       {read_variable($1.parser->socket,$2.str,$3);}
-      | READ VARIABLE expr                                                         {read_address($1.parser->socket,$2.str,$3);}
+      | READ VARIABLE STRING                                                       {long res; read_variable($1.parser->socket,$2.str,$3,&res); $$=res;}
+      | READ VARIABLE expr                                                         {long res; read_address($1.parser->socket,$2.str,$3,&res); $$=res;}
       | WRITE VARIABLE STRING expr                                                 {write_variable($1.parser->socket,$2.str,$3,$4);}
       | WRITE VARIABLE expr expr                                                   {write_address($1.parser->socket,$2.str,$3,$4);}
       | MEM_DUMP STRING expr                                                       {memory_dump_variable($1.parser->socket,$2,$3);}
