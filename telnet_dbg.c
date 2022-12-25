@@ -30,6 +30,11 @@ void* communication(void* thread_data) {
       send(connect->socket, "Buy\n", 4, 0);
       break;
     }
+    if ((buf_read[0] == 'e') && (buf_read[1] == 'x') && (buf_read[2] == 'i') &&
+        (buf_read[3] == 't')) {
+      send(connect->socket, "Buy\n", 4, 0);
+      break;
+    }
     if ((buf_read[0] == 'r') && (buf_read[1] == 'e') && (buf_read[2] == 's') &&
         (buf_read[3] == 'e') && (buf_read[4] == 't')) {
       connect->parser.state = STATE_UNKNOWN;
