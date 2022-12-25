@@ -216,7 +216,7 @@ static void memory_dump(int socket, void* ptr, long byte_count) {
   }
   ++j;
   sprintf(&buff[j], "\n");
-  send(socket, buff, j, 0);
+  send(socket, buff, j+1, 0);
 }
 
 void memory_dump_address(int socket, long addr, long byte_count) {
@@ -245,81 +245,68 @@ void memory_dump_variable(int socket, char* variable, long byte_count) {
   memory_dump(socket, ptr, byte_count);
 }
 
+static long get_number(char* argv) {
+  int base = 10;
+  if ((argv[0] == '0') && (argv[1] == 'x')) {
+    base = 16;
+  }
+
+  return strtoul(argv, NULL, base);
+}
+
+static int memory_write(void* ptr, char* dump) {
+  char* cnum;
+  cnum = strtok(dump, " ");
+  int count = 0;
+  while (cnum != NULL) {
+    void* ptr_data = NULL;
+    long number = get_number(cnum);
+    ptr_data = &number;
+    *(uint8_t*)ptr = *(uint8_t*)ptr_data;
+    ++ptr;
+    ++count;
+    cnum = strtok(NULL, " ");
+  }
+  return count;
+}
+
+void memory_write_address(int socket, long addr, char* dump) {
+  void* ptr = (void*)addr;
+  if (!ptr) {
+    char err[255];
+    sprintf(err, "Address '%lx' is NULL\n", addr);
+    send(socket, err, strlen(err), 0);
+    return;
+  }
+
+  int count = memory_write(ptr, dump);
+  char buff[255];
+  sprintf(buff, "Writed %d bytes to address %lx\n", count, addr);
+  send(socket, buff, strlen(buff), 0);
+}
+
+void memory_write_variable(int socket, char* variable, char* dump) {
+  dlerror();
+  void* ptr = dlsym(NULL, variable);
+  void* error = dlerror();
+  if (error) {
+    char err[255];
+    sprintf(err, "Symbol '%s' not found\n", variable);
+    send(socket, err, strlen(err), 0);
+    return;
+  }
+
+  int count = memory_write(ptr, dump);
+  char buff[255];
+  sprintf(buff, "Writed %d bytes to address %s\n", count, variable);
+  send(socket, buff, strlen(buff), 0);
+}
+
 // static const parser_command cmds[] = {
-//    {"hw", 2, &cmd_writehex, "Write hex string to address", NULL},
 //    {"m2f", 3, &mem2file_cmd, "Dump memory to file", NULL},
-//    {NULL, 0, NULL, NULL}};
 
 
 
-
-
-//  static void cmd_writehex(int argc, char** argp, void* data) {
-//    int fd = *(int*)data;
-//    void* base;
-//    printf2sock(fd, "A1=%s a2=%s\n", argp[1], argp[2]);
-//    if (string_to_num(argp[1], &base) == -1) {
-//      printf2sock(fd, ">>> Wrong arg: '%s'\n", argp[1]);
-//      return;
-//    }
-
-//    char* bin = malloc(strlen(argp[2]));
-//    memset(bin, 0, strlen(argp[2]));
-//    int len = hex2bin(bin, argp[2]);
-//    printf2sock(fd, ">>> Write %i bytes to addr %p:\n", len, base);
-//    if (len > 0)
-//      memcpy(base, bin, len);
-//    return;
-//  }
-
-//  void cmd_dump(int argc, char** argp, void* ddata) {
-//    int fd = *(int*)ddata;
-
-//    // send(fd, "ECHO  dump!\n", 12, 0);
-
-//    char ascii[17];
-//    char tmp[512];
-//    size_t i, j;
-//    int size;
-//    ascii[16] = '\0';
-//    char* data;
-
-//    // printf2sock(fd, "argc=%i argp=%p A0=%s A1=%s A2=%s\n", argc, argp,
-//    // argp[0], argp[1], argp[2]);
-
-//    if (string_to_num(argp[1], &data) == -1 ||
-//        string_to_num(argp[2], &size) == -1) {
-//      printf2sock(fd, "Wrong arguments\n");
-//      return;
-//    }
-
-//    // printf2sock(fd, "HELLO printf2sock data=%p size=%i\n", data, size);
-
-//    for (i = 0; i < size; ++i) {
-//      printf2sock(fd, "%02X ", ((unsigned char*)data)[i]);
-//      if (((unsigned char*)data)[i] >= ' ' &&
-//          ((unsigned char*)data)[i] <= '~') {
-//        ascii[i % 16] = ((unsigned char*)data)[i];
-//      } else {
-//        ascii[i % 16] = '.';
-//      }
-//      if ((i + 1) % 8 == 0 || i + 1 == size) {
-//        printf2sock(fd, " ");
-//        if ((i + 1) % 16 == 0) {
-//          printf2sock(fd, "|  %s \n", ascii);
-//        } else if (i + 1 == size) {
-//          ascii[(i + 1) % 16] = '\0';
-//          if ((i + 1) % 16 <= 8) {
-//            printf2sock(fd, " ");
-//          }
-//          for (j = (i + 1) % 16; j < 16; ++j) {
-//            printf2sock(fd, "   ");
-//          }
-//          printf2sock(fd, "|  %s \n", ascii);
-//        }
-//      }
-//    }
-//  }
 
 //  static void mem2file_cmd(int argc, char** argp, void* ddata) {
 //    int fd = *(int*)ddata;
@@ -348,39 +335,5 @@ void memory_dump_variable(int socket, char* variable, long byte_count) {
 //                  argp[3]);
 
 //    return;
-//  }
-
-//  static void memwrite_cmd(int argc, char** argp, void* ddata) {
-//    int fd = *(int*)ddata;
-//    Dl_info info;
-//    int rc;
-//    void* ptr;
-//    u32_t value;
-//    u32_t old_value = 0;
-
-//    value = arg2arg(argp[2], ALLOW_INT | ALLOW_SYM, 0);
-//    /*
-//    if (string_to_num(argp[2], &value) == -1)
-//    {
-//        printf2sock(fd, ">>> Wrong argument: '%s'\n", argp[2]);
-//        return;
-//    }
-//    */
-
-//    if (string_to_num(argp[1], &ptr) == -1) {
-//      ptr = dlsym(NULL, argp[1]);
-//      if (!ptr) {
-//        printf2sock(fd, ">>> Problem retrieving information for '%s':  %s\n",
-//                    argp[1], dlerror());
-//        return;
-//      }
-//      printf2sock(fd, ">>> Symbol '%s' located in address %p\n", argp[1],
-//      ptr);
-//    }
-//    old_value = *(unsigned*)ptr;
-//    *(unsigned*)ptr = value;
-//    printf2sock(fd, ">>> Value 0x%08X writed to addr %p (old value:
-//    0x%08X)\n",
-//                value, ptr, old_value);
 //  }
 

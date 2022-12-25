@@ -17,17 +17,21 @@
                                   yylval.data.parser = parser;
                                   return RESOLV;
                                 }
-"read"                          {
+"upload"                          {
                                   yylval.data.parser = parser;
                                   return READ;
                                 }
-"write"                         {
+"download"                         {
                                   yylval.data.parser = parser;
                                   return WRITE;
                                 }
 "mem_dump"                      {
                                   yylval.data.parser = parser;
                                   return MEM_DUMP;
+                                }
+"mem_write"                     {
+                                  yylval.data.parser = parser;
+                                  return MEM_WRITE;
                                 }
 "assert"                        {
                                   yylval.data.parser = parser;

@@ -13,4 +13,7 @@ void write_address(int socket, char* type, long addr, long data);
 void memory_dump_address(int socket, long addr, long byte_count);
 void memory_dump_variable(int socket, char* variable, long byte_count);
 
+void memory_write_address(int socket, long addr, char* dump);
+void memory_write_variable(int socket, char* variable, char* dump);
+
 #endif  // FUNC_H
